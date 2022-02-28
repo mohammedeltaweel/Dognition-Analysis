@@ -1,13 +1,3 @@
--- AS it was noticed there are combined values in dog_guid and weight columns
--- that were used by dognition team to test the website
--- Let's create a view that excludes these values
-
-CREATE VIEW dog_fixed AS
-  SELECT *
-  FROM
-    dogs
-  WHERE breed = 'Shih Tzu' AND weight > 50
-
 -- First point of view: Data related to dogs
 -- 1.Do dogs with different breeds or breed groups complete more tests?
 
