@@ -1,4 +1,5 @@
--- First point of view: Data related to dogs
+-- First  route in analysis: Data related to dogs
+
 -- 1.Do dogs with different breeds or breed groups complete more tests?
 
 --1.1 Effect of breed group on completion of tests.
@@ -270,3 +271,30 @@ ORDER BY Is_neutered, Is_pure_breed
 -- It may be evident that neutered dogs complete more tests than non neutered ones!
 -- Furthur exploration will be done but in the second path of analysis where
 -- I explore relation between data related to users and number of tests complteted
+
+
+-- 4. Does completion time affect average number of tests completed??
+SELECT
+    d.breed_type AS "Breed Type",
+    AVG(TIMESTAMPDIFF(minute, e.start_time, e.end_time)) AS Avg_Completion_time,
+    COUNT(c.created_at)/Count(DISTINCT d.dog_guid) AS Avg_tests
+FROM dogs d INNER JOIN exam_answers e
+ON d.dog_guid = e.dog_guid INNER JOIN complete_tests c
+    ON e.dog_guid = c.dog_guid
+WHERE TIMESTAMPDIFF(minute, e.start_time, e.end_time) > 0
+GROUP BY d.breed_type
+
+-- The results show that completion time has no effect on average number of tests
+-- completed
+-- But the values seems not logical, so let's explore further
+SELECT d.breed_type AS breed_type,
+  AVG(TIMESTAMPDIFF(minute,e.start_time,e.end_time)) AS AvgDuration,
+  STDDEV(TIMESTAMPDIFF(minute,e.start_time,e.end_time)) AS StdDevDuration
+FROM dogs d JOIN exam_answers e
+  ON d.dog_guid=e.dog_guid
+WHERE TIMESTAMPDIFF(minute,e.start_time,e.end_time)>0.
+GROUP BY breed_type;
+-- The standard deviation for average duration is very high, the values of the
+-- columns contain outliers. It is good practice to use median insted of average
+-- to get better results, but I'll do this in Tableau because it is easier and
+-- more practical to get the median in it rather than SQL
