@@ -100,3 +100,88 @@ GROUP BY DNA;
 
 -- The difference on Average is less than one test completed, so this hypothesis
 -- might not be effective.
+-- Combining Dna test with neutrality and breed purity
+-- The next three queries will discover these properties together
+SELECT
+    CASE
+        WHEN tmp_tble.dog_fixed = 0 THEN 'Not Neutered'
+        WHEN tmp_tble.dog_fixed = 1 THEN 'Neutered'
+    END AS Is_neutered,
+    CASE
+        WHEN DNA = 0 THEN 'Dna Tested'
+        WHEN DNA = 1 THEN 'Not DNA Tested'
+    END AS Is_Dna_Tested,
+    AVG(tmp_tble.num_tests_completed) AS Avg_tests_completed
+FROM(
+    SELECT
+        d.dog_guid,
+        d.dna_tested AS DNA,
+        d.dog_fixed,
+        count(c.created_at) as num_tests_completed
+    FROM dogs d INNER JOIN complete_tests c
+    ON d.dog_guid = c.dog_guid
+    WHERE d.exclude IS NULL OR d.exclude = 0
+    GROUP BY d.dog_guid) AS tmp_tble
+GROUP BY Is_neutered, Is_Dna_Tested
+HAVING Is_neutered IS NOT NULL AND Is_Dna_Tested IS NOT NULL
+ORDER BY 1,2;
+-- Although the non DNA tested dogs complete more tested than DNA tested when
+-- neutrality is fixed but it doesn't appear to be significant difference
+
+SELECT
+    CASE
+        WHEN breed_type = 'Pure Breed' THEN 'Pure Breed'
+        WHEN breed_type != 'Pure Breed' THEN 'Not Pure Breed'
+    END AS Is_pure_breed,
+    CASE
+        WHEN DNA = 0 THEN 'Dna Tested'
+        WHEN DNA = 1 THEN 'Not DNA Tested'
+    END AS Is_Dna_Tested,
+    AVG(tmp_tble.num_tests_completed) AS Avg_tests_completed
+FROM(
+    SELECT
+        d.dog_guid,
+        d.dna_tested AS DNA,
+        d.breed_type,
+        count(c.created_at) as num_tests_completed
+    FROM dogs d INNER JOIN complete_tests c
+    ON d.dog_guid = c.dog_guid
+    WHERE d.exclude IS NULL OR d.exclude = 0
+    GROUP BY d.dog_guid) AS tmp_tble
+GROUP BY Is_pure_breed, Is_Dna_Tested
+HAVING Is_pure_breed IS NOT NULL AND Is_Dna_Tested IS NOT NULL
+ORDER BY 1,2;
+-- Here the results are different, dna tested dogs completed more tests in Pure
+-- breed, on the other hand non dna tested completed more in not pure breed category
+
+SELECT
+    CASE
+        WHEN tmp_tble.dog_fixed = 0 THEN 'Not Neutered'
+        WHEN tmp_tble.dog_fixed = 1 THEN 'Neutered'
+    END AS Is_neutered,
+    CASE
+        WHEN breed_type = 'Pure Breed' THEN 'Pure Breed'
+        WHEN breed_type != 'Pure Breed' THEN 'Not Pure Breed'
+    END AS Is_pure_breed,
+    CASE
+        WHEN DNA = 0 THEN 'Dna Tested'
+        WHEN DNA = 1 THEN 'Not DNA Tested'
+    END AS Is_Dna_Tested,
+    AVG(tmp_tble.num_tests_completed) AS Avg_tests_completed
+FROM(
+    SELECT
+        d.dog_guid,
+        d.dna_tested AS DNA,
+        d.breed_type,
+        d.dog_fixed,
+        count(c.created_at) as num_tests_completed
+    FROM dogs d INNER JOIN complete_tests c
+    ON d.dog_guid = c.dog_guid
+    WHERE d.exclude IS NULL OR d.exclude = 0
+    GROUP BY d.dog_guid) AS tmp_tble
+GROUP BY Is_pure_breed, Is_Dna_Tested, Is_neutered
+HAVING Is_pure_breed IS NOT NULL AND Is_Dna_Tested IS NOT NULL AND Is_neutered IS NOT NULL
+ORDER BY 1,2,3;
+
+-- Again, it appears to be randomized and DNA testing doesn't have an effect on
+-- tests completion
